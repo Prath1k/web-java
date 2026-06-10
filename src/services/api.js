@@ -50,7 +50,8 @@ export const executeJavaCode = async (sourceCode) => {
 
       const detailsUrl = getApiUrl('/runners/get_details.json', {
         id: id,
-        api_key: 'guest'
+        api_key: 'guest',
+        _cb: Date.now() // Prevent CDN and browser caching
       });
 
       const detailsResponse = await fetch(detailsUrl);
