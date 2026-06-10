@@ -1,15 +1,29 @@
-export const executeJavaCode = async (sourceCode) => {
-  const createUrl = '/api-paiza/runners/create.json';
-  const detailsUrl = '/api-paiza/runners/get_details.json';
+const getApiUrl = (path, queryParams = {}) => {
+  const params = new URLSearchParams(queryParams);
+  const targetUrl = `https://api.paiza.io${path}?${params.toString()}`;
 
+  // If running in development (localhost / 127.0.0.1), use the local Vite proxy
+  if (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '0.0.0.0'
+  ) {
+    return `/api-paiza${path}?${params.toString()}`;
+  }
+
+  // If running in production (GitHub Pages), route through a CORS proxy
+  return `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+};
+
+export const executeJavaCode = async (sourceCode) => {
   try {
-    const createParams = new URLSearchParams({
+    const createUrl = getApiUrl('/runners/create.json', {
       source_code: sourceCode,
       language: 'java',
       api_key: 'guest'
     });
 
-    const createResponse = await fetch(`${createUrl}?${createParams.toString()}`, {
+    const createResponse = await fetch(createUrl, {
       method: 'POST'
     });
 
@@ -34,12 +48,12 @@ export const executeJavaCode = async (sourceCode) => {
       await new Promise(resolve => setTimeout(resolve, 500));
       attempts++;
 
-      const detailsParams = new URLSearchParams({
+      const detailsUrl = getApiUrl('/runners/get_details.json', {
         id: id,
         api_key: 'guest'
       });
 
-      const detailsResponse = await fetch(`${detailsUrl}?${detailsParams.toString()}`);
+      const detailsResponse = await fetch(detailsUrl);
       if (!detailsResponse.ok) {
         throw new Error(`HTTP error during polling! status: ${detailsResponse.status}`);
       }
